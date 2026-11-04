@@ -10,6 +10,8 @@
  *   action = login         ->  index()         mostra o formulário
  *   action = authenticate  ->  authenticate()  valida e-mail e senha
  *   action = logout        ->  logout()         encerra a sessão
+ *   action = cadastro      ->  cadastro()       mostra o formulário de cadastro
+ *   action = registrar     ->  registrar()      valida e grava o novo usuário
  */
 
 # Carrega o model de usuários. O require_once garante que ele será
@@ -118,6 +120,107 @@ Class UserController {
         # não convém avisar qual dos dois estava errado (segurança).
         $error = "E-mail ou senha inválidos";
         include __DIR__ . "/../view/login.php";   # mostra o login com o erro
+    }
+    # -------------------------------------------------------------------
+    # Método: cadastro() - mostra a tela de cadastro
+    # -------------------------------------------------------------------
+    # Igual ao index() do login: só EXIBE o formulário (view cadastro.php).
+    # Quem já está logado é mandado de volta para a lista de tarefas,
+    # pois não precisa criar outra conta.
+    # -------------------------------------------------------------------
+    public function cadastro() {
+        if (isset($_SESSION['id'])) {
+            header("Location: index.php");   # quem já está logado não precisa se cadastrar
+            exit;
+        }
+
+        include __DIR__ . "/../view/cadastro.php";   # só mostra o formulário
+    }
+
+    # -------------------------------------------------------------------
+    # Método: registrar() - valida e grava o novo usuário
+    # -------------------------------------------------------------------
+    # Executada quando o formulário de cadastro é enviado para
+    # index.php?action=registrar (método POST).
+    #
+    # Fluxo passo a passo:
+    #   a) confere se os 4 campos chegaram no formulário;
+    #   b) limpa os valores (trim) e guarda em variáveis;
+    #   c) aplica as VALIDAÇÕES, uma por vez, até achar um erro;
+    #   d) se achou erro, mostra o formulário de novo com a mensagem;
+    #   e) se está tudo certo, grava no banco (model User->create);
+    #   f) cria a sessão (login automático) e vai para a lista.
+    # -------------------------------------------------------------------
+    public function registrar() {
+        # Os quatro campos existem no POST? Se não, a pessoa acessou a
+        # URL "na mão" (sem enviar o formulário): volta para o cadastro.
+        if (!isset($_POST['nome'], $_POST['email'], $_POST['senha'], $_POST['confirmar_senha'])) {
+            header("Location: index.php?action=cadastro");
+            exit;
+        }
+
+        # trim() tira espaços do começo/fim. A senha (e a confirmação)
+        # NÃO passam por trim, pois espaços fazem parte dela.
+        $nome  = trim($_POST['nome']);
+        $email = trim($_POST['email']);
+        $senha = $_POST['senha'];
+        $confirmar = $_POST['confirmar_senha'];
+
+        # ---- validações: se falhar, mostra o formulário de novo com a mensagem ----
+        # $error começa como null ("nenhum erro até agora"). Cada validação
+        # abaixo só roda se a anterior passou, por causa do elseif: a
+        # primeira que falhar define a mensagem e as demais são ignoradas.
+        $error = null;
+
+        if ($nome === '' || $email === '' || $senha === '' || $confirmar === '') {
+            $error = "Preencha todos os campos";
+        } elseif (!filter_var($email, FILTER_VALIDATE_EMAIL)) {
+            # filter_var + FILTER_VALIDATE_EMAIL confere se o texto tem
+            # formato de e-mail (algo@dominio.com). Devolve false se não tiver.
+            $error = "E-mail inválido";
+        } elseif (strlen($senha) < 6) {
+            # strlen() = quantidade de caracteres da senha.
+            $error = "A senha precisa ter pelo menos 6 caracteres";
+        } elseif ($senha !== $confirmar) {
+            # !== compara valor E tipo; aqui, senha e confirmação diferentes.
+            $error = "As senhas não conferem";
+        } elseif ($this->userModel->searchByEmail($email)) {
+            # Reaproveita o método do login: se ele devolver um usuário
+            # (e não null), esse e-mail já está em uso.
+            $error = "Este e-mail já está cadastrado";
+        }
+
+        # Houve algum erro? Mostra o formulário de novo. Como o include
+        # acontece neste método, a view enxerga $error, $nome e $email
+        # (por isso o formulário volta com nome/e-mail preenchidos).
+        if ($error !== null) {
+            include __DIR__ . "/../view/cadastro.php";   # a view lê $error e $nome/$email
+            return;   # sai do método: nada é gravado
+        }
+
+        # ---- tudo certo: grava e já deixa a pessoa logada ----
+        # create() devolve true se o INSERT funcionou.
+        if ($this->userModel->create($nome, $email, $senha)) {
+            # Busca o usuário recém-criado só para descobrir o id que o
+            # banco gerou (AUTO_INCREMENT).
+            $usuario = $this->userModel->searchByEmail($email);   # busca para pegar o id novo
+
+            # session_regenerate_id(true) troca o identificador da sessão
+            # e descarta o antigo. Boa prática de segurança ao mudar o
+            # estado de "visitante" para "logado" (evita session fixation).
+            session_regenerate_id(true);                          # novo id de sessão (segurança)
+
+            # Mesma sessão que o authenticate() cria no login.
+            $_SESSION['id'] = $usuario['id'];
+            $_SESSION['nome'] = $usuario['nome'];
+
+            header("Location: index.php");   # vai direto para a lista
+            exit;
+        }
+
+        # Chegou aqui = o INSERT falhou (ex.: erro no banco). Avisa a pessoa.
+        $error = "Não foi possível cadastrar. Tente novamente";
+        include __DIR__ . "/../view/cadastro.php";
     }
 
     # -------------------------------------------------------------------

@@ -56,5 +56,36 @@ Class User {
         $result = $stmt->get_result();   # resultado da consulta
         return $result->fetch_assoc();   # devolve a linha como array (ou null)
     }
+
+    # -------------------------------------------------------------------
+    # Método: create($nome, $email, $senha) - grava um novo usuário
+    # -------------------------------------------------------------------
+    # Parâmetros: $nome, $email e $senha (a senha em TEXTO PURO, como
+    #             digitada no formulário de cadastro).
+    # Retorno:    true se o INSERT funcionou; false se falhou (por exemplo,
+    #             e-mail repetido, já que a coluna "email" é UNIQUE).
+    #
+    # O model só GRAVA: as validações (senha mínima, e-mail válido,
+    # confirmação) ficam no controller, que é quem decide as regras.
+    # -------------------------------------------------------------------
+    public function create($nome, $email, $senha) {
+        # password_hash() transforma a senha num HASH (texto embaralhado
+        # de um só sentido, ex.: $2y$10$...). É o hash que vai para o
+        # banco - nunca a senha pura. No login, o password_verify()
+        # compara a senha digitada com esse hash.
+        # PASSWORD_DEFAULT = deixa o PHP escolher o algoritmo mais seguro.
+        $hash = password_hash($senha, PASSWORD_DEFAULT);
+
+        # Consulta parametrizada (3 "?"), igual ao searchByEmail:
+        # evita SQL Injection porque os valores não são colados no texto.
+        $sql = "INSERT INTO usuarios (nome, email, senha) VALUES (?, ?, ?)";
+        $stmt = $this->conn->prepare($sql);   # prepara a consulta
+
+        # "sss" = os três valores são strings (s = string), na ordem dos "?".
+        # Repare que liga o $hash, e não a $senha.
+        $stmt->bind_param("sss", $nome, $email, $hash);
+
+        return $stmt->execute();   # executa; devolve true (gravou) ou false (falhou)
+    }
 }
 ?>

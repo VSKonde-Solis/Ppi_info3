@@ -36,13 +36,14 @@ todoLogin - MVC/
 └── app/
     ├── config/database.php      ← conexão única com o banco todo_list
     ├── controller/
-    │   ├── userController.php   ← login (authenticate) e logout
+    │   ├── userController.php   ← login (authenticate), logout e cadastro (cadastro/registrar)
     │   └── controller.php       ← tarefas (inalterado)
     ├── model/
-    │   ├── user.php             ← busca usuário por e-mail
+    │   ├── user.php             ← busca usuário por e-mail e cria usuário (create)
     │   └── tarefa.php           ← inalterado
     └── view/
         ├── login.php            ← tela de login
+        ├── cadastro.php         ← tela de cadastro
         ├── listar.php           ← lista de tarefas + "Olá, Admin! / Sair"
         └── modalEditar.php      ← inalterado
 ```
@@ -55,3 +56,9 @@ todoLogin - MVC/
 - `userController` completado: valida e-mail/senha no banco com `password_verify` e cria a sessão.
 - `login.php` e o botão **Sair** (`action=logout`) criados.
 - As duas classes `Database` foram unificadas em uma só, apontando para o banco `todo_list`.
+
+## Cadastro de usuários
+
+- Rotas: `cadastro` (mostra o formulário) e `registrar` (valida e grava).
+- Validações: campos vazios, e-mail válido, senha com 6+ caracteres, confirmação igual e e-mail ainda não cadastrado.
+- A senha é gravada com `password_hash`; depois de cadastrar, a pessoa já entra logada.

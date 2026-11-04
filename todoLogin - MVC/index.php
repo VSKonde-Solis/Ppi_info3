@@ -13,6 +13,7 @@
  *
  * Fluxo resumido:
  *   action = login / authenticate / logout  ->  UserController
+ *   action = cadastro / registrar           ->  UserController (criar conta)
  *   qualquer outra action SEM sessão        ->  tela de login (bloqueado)
  *   qualquer outra action COM sessão        ->  tarefaController
  */
@@ -46,8 +47,9 @@ $action = $_GET['action'] ?? 'index';
 
 # ========================= ROTAS DO LOGIN ===========================
 # in_array($valor, $lista) = verifica se $action está dentro da lista.
-# Estas três rotas são as únicas permitidas SEM estar logado.
-if (in_array($action, ['login', 'authenticate', 'logout'])) {
+# Estas cinco rotas são as únicas permitidas SEM estar logado
+# (login, validação do login, logout e as duas do cadastro de usuário).
+if (in_array($action, ['login', 'authenticate', 'logout', 'cadastro', 'registrar'])) {
     # switch = escolhe o bloco "case" que corresponde ao valor de $action
     switch ($action) {
         case 'login':           # index.php?action=login -> mostra o formulário
@@ -55,6 +57,12 @@ if (in_array($action, ['login', 'authenticate', 'logout'])) {
             break;              # break encerra o switch (não cai no próximo case)
         case 'authenticate':    # index.php?action=authenticate -> valida e-mail/senha
             $userController->authenticate();
+            break;
+        case 'cadastro':        # index.php?action=cadastro -> mostra o formulário de cadastro
+            $userController->cadastro();    # (GET: só exibe a tela)
+            break;
+        case 'registrar':       # index.php?action=registrar -> valida e grava o novo usuário
+            $userController->registrar();   # (POST: recebe os dados do formulário)
             break;
         case 'logout':          # index.php?action=logout -> desloga
             $userController->logout();

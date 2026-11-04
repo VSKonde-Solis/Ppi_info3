@@ -60,6 +60,12 @@
             cursor: pointer;                /* muda o mouse para "mãozinha" */
             font-size: 15px;
         }
+        /* Texto pequeno com link ("Não tem conta? Cadastre-se") */
+        .link {
+            text-align: center;
+            font-size: 14px;
+            margin-bottom: 0;
+        }
 
         /* Mensagem de erro (quando o login dá errado) */
         .erro {
@@ -100,6 +106,10 @@
             <input type="password" name="senha" placeholder="Senha" required>
             <button type="submit">Entrar</button>   <!-- type=submit envia o form -->
         </form>
+
+        <!-- Link para a tela de cadastro: abre a rota "cadastro" no index.php
+             (um link comum faz uma requisição GET). -->
+        <p class="link">Não tem conta? <a href="index.php?action=cadastro">Cadastre-se</a></p>
     </div>
 
 </body>
