@@ -53,7 +53,7 @@
         .login-box button {
             width: 100%;
             padding: 10px;
-            background-color: #4CAF50;      /* verde */
+            background-color: #64007D;      
             color: white;
             border: none;
             border-radius: 5px;
